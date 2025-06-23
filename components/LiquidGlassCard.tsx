@@ -29,7 +29,8 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({ children, clas
   const is3DModel = (child: React.ReactNode) => {
     if (!React.isValidElement(child)) return false;
     const type = (child as ReactElement).type;
-    return typeof type === "function" && (type as any).name === "Interactive3DModel";
+    // Instead of 'any', use 'unknown' and type guard
+    return typeof type === "function" && (type as { name?: string }).name === "Interactive3DModel";
   };
 
   // Separate children for special handling

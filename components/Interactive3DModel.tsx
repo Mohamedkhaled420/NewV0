@@ -22,7 +22,7 @@ const SpinningCube: React.FC = () => {
     }
   });
 
-  const handlePointerDown = (e: any) => {
+  const handlePointerDown = (e: React.PointerEvent) => {
     isDragging.current = true;
     lastPointer.current = { x: e.clientX, y: e.clientY };
   };
@@ -32,7 +32,7 @@ const SpinningCube: React.FC = () => {
     lastPointer.current = null;
   };
 
-  const handlePointerMove = (e: any) => {
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging.current || !meshRef.current || !lastPointer.current) return;
     const dx = e.clientX - lastPointer.current.x;
     const dy = e.clientY - lastPointer.current.y;

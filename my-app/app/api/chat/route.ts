@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
 
     // Format conversation history for Gemini (last 10 messages for context)
-    const contents = []
+    const contents: Array<{ role: string; parts: Array<{ text: string }> }> = []
     const recentHistory = history.slice(-10)
 
     recentHistory.forEach((msg) => {

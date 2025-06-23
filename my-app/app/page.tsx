@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mic, MicOff, ImageIcon, Send, RefreshCw } from "lucide-react"
+import Image from "next/image"
 
 interface Message {
   id: string
@@ -14,21 +15,72 @@ interface Message {
   timestamp: Date
 }
 
+// Extend the Window interface for SpeechRecognition
+// and add types for recognition and permission status
+
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition | undefined
+    webkitSpeechRecognition: typeof SpeechRecognition | undefined
+  }
+}
+
+// Polyfill for SpeechRecognition type (for browser compatibility)
+type BrowserSpeechRecognition =
+  | (new () => {
+      continuous: boolean
+      interimResults: boolean
+      lang: string
+      onresult: ((event: SpeechRecognitionEvent) => void) | null
+      onerror: ((event: { error: string }) => void) | null
+      onend: (() => void) | null
+      start: () => void
+      stop: () => void
+    })
+  | undefined
+
+// Use a more specific type for SpeechRecognitionEvent
+interface SpeechRecognitionResult {
+  readonly isFinal: boolean;
+  readonly length: number;
+  item(index: number): SpeechRecognitionAlternative;
+  [index: number]: SpeechRecognitionAlternative;
+}
+
+interface SpeechRecognitionAlternative {
+  readonly transcript: string;
+  readonly confidence: number;
+}
+
+interface SpeechRecognitionEvent {
+  readonly resultIndex: number;
+  readonly results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  readonly length: number;
+  item(index: number): SpeechRecognitionResult;
+  [index: number]: SpeechRecognitionResult;
+}
+
+const SpeechRecognition: BrowserSpeechRecognition =
+  typeof window !== "undefined"
+    ? window.SpeechRecognition || window.webkitSpeechRecognition
+    : undefined
+
 export default function MinimalistChatbot() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedImage, setSelectedImage] = useState(null)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isListening, setIsListening] = useState(false)
-  const [microphonePermissionStatus, setMicrophonePermissionStatus] = useState(null)
+  const [microphonePermissionStatus, setMicrophonePermissionStatus] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [isInitializing, setIsInitializing] = useState(true)
-  const messagesEndRef = useRef(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Speech Recognition setup
-  const SpeechRecognition =
-    typeof window !== "undefined" ? window.SpeechRecognition || window.webkitSpeechRecognition : null
-  const recognition = useRef(null)
+  const recognition = useRef<InstanceType<NonNullable<BrowserSpeechRecognition>> | null>(null)
 
   // Initialize conversation on component mount
   useEffect(() => {
@@ -62,13 +114,13 @@ export default function MinimalistChatbot() {
       recognition.current.interimResults = false
       recognition.current.lang = "en-US"
 
-      recognition.current.onresult = (event) => {
+      recognition.current.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript
         setInputMessage(transcript)
         setIsListening(false)
       }
 
-      recognition.current.onerror = (event) => {
+      recognition.current.onerror = (event: { error: string }) => {
         console.error("Speech recognition error:", event.error)
         setIsListening(false)
         checkMicrophonePermission()
@@ -80,7 +132,7 @@ export default function MinimalistChatbot() {
     }
 
     checkMicrophonePermission()
-  }, [SpeechRecognition])
+  }, []) // Remove SpeechRecognition from dependency array
 
   const checkMicrophonePermission = async () => {
     if (typeof navigator !== "undefined" && navigator.permissions) {
@@ -115,7 +167,7 @@ export default function MinimalistChatbot() {
     }
 
     if (isListening && recognition.current) {
-      recognition.current.stop()
+      recognition.current.stop?.()
       setIsListening(false)
     }
 
@@ -127,7 +179,7 @@ export default function MinimalistChatbot() {
     // Clear input immediately for better UX
     setInputMessage("")
     setSelectedImage(null)
-    const fileInput = document.getElementById("image-upload-input")
+    const fileInput = document.getElementById("image-upload-input") as HTMLInputElement | null
     if (fileInput) fileInput.value = ""
 
     try {
@@ -175,12 +227,12 @@ export default function MinimalistChatbot() {
     }
   }
 
-  const handleImageChange = (event) => {
-    const file = event.target.files[0]
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
     if (file) {
       const reader = new FileReader()
       reader.onloadend = () => {
-        setSelectedImage(reader.result)
+        setSelectedImage(reader.result as string)
       }
       reader.readAsDataURL(file)
     } else {
@@ -195,14 +247,14 @@ export default function MinimalistChatbot() {
     }
 
     if (isListening) {
-      recognition.current.stop()
+      recognition.current.stop?.()
     } else {
       setInputMessage("")
       try {
         if (typeof navigator !== "undefined" && navigator.mediaDevices) {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
           stream.getTracks().forEach((track) => track.stop())
-          recognition.current.start()
+          recognition.current.start?.()
         }
       } catch (error) {
         console.error("Microphone access denied or error:", error)
@@ -310,10 +362,13 @@ export default function MinimalistChatbot() {
                   ) : (
                     <div className="max-w-[70%] p-4 rounded-2xl bg-gray-50 border border-gray-200 minimal-shadow-light">
                       {msg.imageBase64 && (
-                        <img
+                        <Image
                           src={msg.imageBase64 || "/placeholder.svg"}
                           alt="Shared image"
                           className="max-w-full h-auto rounded-xl border border-gray-200"
+                          width={400}
+                          height={300}
+                          unoptimized
                         />
                       )}
                       {msg.text && <p className="mt-3 text-sm font-light text-gray-700">{msg.text}</p>}

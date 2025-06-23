@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
+    "@react-three/fiber": "^9.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.19.1",
@@ -18,7 +19,8 @@
     "react": "^19.0.0",
     "react-blur": "^1.1.1",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "three": "^0.177.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

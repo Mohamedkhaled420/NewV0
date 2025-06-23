@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mic, MicOff, ImageIcon, Send, RefreshCw } from "lucide-react"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 
 interface Message {
   id: string
@@ -67,6 +68,9 @@ const SpeechRecognition: BrowserSpeechRecognition =
   typeof window !== "undefined"
     ? window.SpeechRecognition || window.webkitSpeechRecognition
     : undefined
+
+// Dynamically import Interactive3DModel to avoid SSR issues
+const Interactive3DModel = dynamic(() => import("@/components/Interactive3DModel"), { ssr: false })
 
 export default function MinimalistChatbot() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -286,6 +290,12 @@ export default function MinimalistChatbot() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-6 font-mono">
+      {/* 3D Model Section */}
+      <div className="flex justify-center mb-8">
+        <div style={{ width: 320, maxWidth: "100%" }}>
+          <Interactive3DModel />
+        </div>
+      </div>
       {/* Floating 3D Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-20 w-16 h-16 bg-gray-200 rounded-lg transform rotate-12 animate-float-slow opacity-30"></div>

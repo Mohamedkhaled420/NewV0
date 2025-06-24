@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import { motion, useAnimation } from "framer-motion";
 
 interface LiquidGlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,20 +10,28 @@ export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({ children, 
   const controls = useAnimation();
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
     controls.start({
       boxShadow: "0 0 0 2px var(--glass-teal), 0 8px 32px 0 hsla(240, 40%, 30%, 0.18)",
       background: "var(--glass-teal)",
       transition: { duration: 0.3 },
     });
-  };
-  const handleMouseLeave = () => {
+  }, [controls]);
+  const handleMouseLeave = useCallback(() => {
     controls.start({
       boxShadow: "var(--glass-shadow)",
       background: "var(--glass-indigo)",
       transition: { duration: 0.3 },
     });
-  };
+  }, [controls]);
+
+  // Remove drag-related and animation-related props to avoid type conflict with framer-motion
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const {
+    onDrag, onDragStart, onDragEnd, onDragOver, onDragEnter, onDragLeave, onDrop,
+    onAnimationStart, onAnimationEnd, onTransitionEnd,
+    ...restProps
+  } = props;
 
   return (
     <motion.button
@@ -33,7 +41,7 @@ export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({ children, 
       animate={controls}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      {...props}
+      {...restProps}
     >
       {children}
       {/* Ripple/Glow effect on hover */}

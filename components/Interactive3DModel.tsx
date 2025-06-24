@@ -1,7 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Html } from "@react-three/drei";
-import { Mesh, Color } from "three";
+import { Mesh, Color, InstancedMesh, Object3D } from "three";
+import * as THREE from "three";
+import { EffectComposer, Bloom, DepthOfField, ChromaticAberration } from '@react-three/postprocessing';
 
 interface Interactive3DModelProps {
   className?: string;
@@ -9,7 +11,7 @@ interface Interactive3DModelProps {
 }
 
 // Stylized "D" shape using torus and box primitives, now with compass needle and markers
-const StylizedDCompass: React.FC = () => {
+const StylizedDCompass: React.FC = React.memo(() => {
   const group = useRef<any>(null);
   // Animate rotation and glow
   useFrame((state) => {
@@ -18,95 +20,95 @@ const StylizedDCompass: React.FC = () => {
       group.current.rotation.x = Math.sin(state.clock.getElapsedTime() / 2) * 0.08;
     }
   });
+
+  // Memoize geometry/materials
+  const torusGeometry = useMemo(() => new Mesh().geometry = new THREE.TorusGeometry(0.7, 0.22, 32, 100, Math.PI * 1.5), []);
+  const torusAccentGeometry = useMemo(() => new Mesh().geometry = new THREE.TorusGeometry(0.7, 0.03, 16, 80), []);
+  const boxGeometry = useMemo(() => new Mesh().geometry = new THREE.BoxGeometry(0.18, 0.7, 0.22), []);
+  const coneGeometry = useMemo(() => new Mesh().geometry = new THREE.ConeGeometry(0.07, 0.7, 32), []);
+  const sphereGeometry = useMemo(() => new Mesh().geometry = new THREE.SphereGeometry(0.035, 16, 16), []);
+  const sphereGeometryN = useMemo(() => new Mesh().geometry = new THREE.SphereGeometry(0.045, 16, 16), []);
+
+  const dMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    color: new Color("#7f5af0"),
+    roughness: 0.18,
+    metalness: 0.7,
+    transmission: 0.7,
+    thickness: 0.4,
+    clearcoat: 0.6,
+    ior: 1.3,
+    emissive: new Color("#00ffe7"),
+    emissiveIntensity: 0.12,
+    transparent: true,
+    opacity: 0.95,
+  }), []);
+  const accentMaterial = useMemo(() => new THREE.MeshBasicMaterial({ color: "#00ffe7", transparent: true, opacity: 0.18 }), []);
+  const needleMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+    color: new Color("#00ffe7"),
+    roughness: 0.1,
+    metalness: 0.8,
+    transmission: 0.8,
+    thickness: 0.5,
+    clearcoat: 0.8,
+    ior: 1.4,
+    emissive: new Color("#7f5af0"),
+    emissiveIntensity: 0.18,
+    transparent: true,
+    opacity: 0.92,
+  }), []);
+  const markerMaterial = useMemo(() => new THREE.MeshStandardMaterial({ color: "#fff", emissive: "#00ffe7", emissiveIntensity: 0.5, transparent: true, opacity: 0.5 }), []);
+  const markerMaterialN = useMemo(() => new THREE.MeshStandardMaterial({ color: "#fff", emissive: "#00ffe7", emissiveIntensity: 0.7, transparent: true, opacity: 0.7 }), []);
+
+  // Instanced mesh for E, S, W markers
+  const markerPositions: [number, number, number][] = [
+    [0.95, 0, 0],
+    [0, -0.95, 0],
+    [-0.95, 0, 0],
+  ];
+
   return (
     <group ref={group}>
       {/* Main D body: thick torus */}
-      <mesh castShadow receiveShadow position={[0, 0, 0]}>
-        <torusGeometry args={[0.7, 0.22, 32, 100, Math.PI * 1.5]} />
-        <meshPhysicalMaterial
-          color={new Color("#7f5af0")}
-          roughness={0.18}
-          metalness={0.7}
-          transmission={0.7}
-          thickness={0.4}
-          clearcoat={0.6}
-          ior={1.3}
-          emissive={new Color("#00ffe7")}
-          emissiveIntensity={0.12}
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
+      <mesh castShadow receiveShadow position={[0, 0, 0]} geometry={torusGeometry} material={dMaterial} />
       {/* D stem: box */}
-      <mesh castShadow receiveShadow position={[0.35, -0.25, 0]} rotation={[0, 0, 0.08]}>
-        <boxGeometry args={[0.18, 0.7, 0.22]} />
-        <meshPhysicalMaterial
-          color={new Color("#7f5af0")}
-          roughness={0.18}
-          metalness={0.7}
-          transmission={0.7}
-          thickness={0.4}
-          clearcoat={0.6}
-          ior={1.3}
-          emissive={new Color("#00ffe7")}
-          emissiveIntensity={0.12}
-          transparent
-          opacity={0.95}
-        />
-      </mesh>
+      <mesh castShadow receiveShadow position={[0.35, -0.25, 0]} rotation={[0, 0, 0.08]} geometry={boxGeometry} material={dMaterial} />
       {/* Subtle glowing ring accent */}
-      <mesh position={[0, 0, -0.13]}>
-        <torusGeometry args={[0.7, 0.03, 16, 80]} />
-        <meshBasicMaterial color="#00ffe7" transparent opacity={0.18} />
-      </mesh>
+      <mesh position={[0, 0, -0.13]} geometry={torusAccentGeometry} material={accentMaterial} />
       {/* Compass needle: thin, long cone */}
-      <mesh position={[0, 0, 0.23]} rotation={[-Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.07, 0.7, 32]} />
-        <meshPhysicalMaterial
-          color={new Color("#00ffe7")}
-          roughness={0.1}
-          metalness={0.8}
-          transmission={0.8}
-          thickness={0.5}
-          clearcoat={0.8}
-          ior={1.4}
-          emissive={new Color("#7f5af0")}
-          emissiveIntensity={0.18}
-          transparent
-          opacity={0.92}
-        />
-      </mesh>
-      {/* Cardinal direction markers (N, E, S, W) as small glowing spheres */}
-      <mesh position={[0, 0.95, 0]}>
-        <sphereGeometry args={[0.045, 16, 16]} />
-        <meshStandardMaterial color="#fff" emissive="#00ffe7" emissiveIntensity={0.7} transparent opacity={0.7} />
-      </mesh>
-      <mesh position={[0.95, 0, 0]}>
-        <sphereGeometry args={[0.035, 16, 16]} />
-        <meshStandardMaterial color="#fff" emissive="#00ffe7" emissiveIntensity={0.5} transparent opacity={0.5} />
-      </mesh>
-      <mesh position={[0, -0.95, 0]}>
-        <sphereGeometry args={[0.035, 16, 16]} />
-        <meshStandardMaterial color="#fff" emissive="#00ffe7" emissiveIntensity={0.5} transparent opacity={0.5} />
-      </mesh>
-      <mesh position={[-0.95, 0, 0]}>
-        <sphereGeometry args={[0.035, 16, 16]} />
-        <meshStandardMaterial color="#fff" emissive="#00ffe7" emissiveIntensity={0.5} transparent opacity={0.5} />
-      </mesh>
+      <mesh position={[0, 0, 0.23]} rotation={[-Math.PI / 2, 0, 0]} geometry={coneGeometry} material={needleMaterial} />
+      {/* Cardinal direction marker N (bigger) */}
+      <mesh position={[0, 0.95, 0]} geometry={sphereGeometryN} material={markerMaterialN} />
+      {/* Instanced mesh for E, S, W markers */}
+      <instancedMesh args={[sphereGeometry, markerMaterial, 3]}>
+        {markerPositions.map((pos, i) => {
+          const obj = new Object3D();
+          obj.position.set(...pos);
+          obj.updateMatrix();
+          return <primitive key={i} object={obj} />;
+        })}
+      </instancedMesh>
     </group>
   );
-};
+});
 
 const Interactive3DModel: React.FC<Interactive3DModelProps> = ({ className = "", style = {} }) => {
   const [zoom, setZoom] = useState(1.5);
   return (
     <div className={className} style={{ width: "100%", height: 320, ...style }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3], fov: 50, zoom }}>
+      <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3.5], fov: 50, zoom }}>
         <color attach="background" args={["#181c2f"]} />
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[3, 6, 4]} intensity={1.2} castShadow color="#b7bfff" />
-        <pointLight position={[-2, 2, 2]} intensity={0.7} color="#00ffe7" />
-        <StylizedDCompass />
+        <ambientLight intensity={0.5} />
+        <directionalLight position={[3, 6, 4]} intensity={1.1} castShadow color="#b7bfff" />
+        <pointLight position={[-2, 2, 2]} intensity={0.6} color="#00ffe7" />
+        {/* Slightly move the model back for glass overlay effect */}
+        <group position={[0, 0, -0.18]}>
+          <StylizedDCompass />
+        </group>
+        <EffectComposer>
+          <Bloom luminanceThreshold={0.18} luminanceSmoothing={0.25} intensity={0.7} />
+          <DepthOfField focusDistance={0.015} focalLength={0.25} bokehScale={2.2} height={320} />
+          <ChromaticAberration offset={[0.001, 0.0015]} />
+        </EffectComposer>
         <OrbitControls enablePan={false} enableZoom={true} minDistance={1.2} maxDistance={3.5} />
         <Html position={[0, -1.2, 0]} center style={{ color: '#fff', fontWeight: 600, fontSize: 16, textShadow: '0 2px 8px #0008' }}>InnerCompass AI</Html>
       </Canvas>

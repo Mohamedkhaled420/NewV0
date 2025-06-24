@@ -1,4 +1,4 @@
-import React, { useRef, ReactElement } from "react";
+import React, { useRef, ReactElement, useCallback } from "react";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import { Blur } from "react-blur";
 
@@ -30,14 +30,14 @@ export const LiquidGlassCard: React.FC<LiquidGlassCardProps> = ({
   const lightX = useTransform(mouseX, [0, 1], ["0%", "100%"]);
   const lightY = useTransform(mouseY, [0, 1], ["0%", "100%"]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const rect = cardRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     mouseX.set(x);
     mouseY.set(y);
-  };
+  }, [mouseX, mouseY]);
 
   // Check if Interactive3DModel is a direct child
   const is3DModel = (child: React.ReactNode) => {

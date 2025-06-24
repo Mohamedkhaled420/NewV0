@@ -9,6 +9,19 @@ export const LiquidGlassInput: React.FC<LiquidGlassInputProps> = ({ className = 
   const controls = useAnimation();
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Remove event handlers and animation props that are incompatible with Framer Motion's motion.input
+  const {
+    onDrag,
+    onDragStart,
+    onDragEnd,
+    onDragOver,
+    onDrop,
+    onAnimationStart,
+    onAnimationEnd,
+    onAnimationIteration,
+    ...filteredProps
+  } = props;
+
   const handleFocus = () => {
     controls.start({
       boxShadow: "0 0 0 2px var(--glass-teal), 0 8px 32px 0 hsla(240, 40%, 30%, 0.18)",
@@ -32,7 +45,7 @@ export const LiquidGlassInput: React.FC<LiquidGlassInputProps> = ({ className = 
       animate={controls}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      {...props}
+      {...filteredProps}
     />
   );
 };

@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef, Suspense } from "react"
 import dynamic from "next/dynamic"
 import LiquidGlassCard from "@/components/LiquidGlassCard"
 import { LiquidGlassButton } from "@/components/ui/LiquidGlassButton"
+import { Suspense } from "react"
 
 // Dynamically import Interactive3DModel to avoid SSR issues
 const Interactive3DModel = dynamic(() => import("@/components/Interactive3DModel"), { ssr: false })

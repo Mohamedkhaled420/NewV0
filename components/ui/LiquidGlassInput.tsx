@@ -5,22 +5,26 @@ interface LiquidGlassInputProps extends React.InputHTMLAttributes<HTMLInputEleme
   className?: string;
 }
 
+// List of props to omit for framer-motion compatibility
+const OMIT_PROPS = [
+  "onDrag", "onDragStart", "onDragEnd", "onDragOver", "onDrop",
+  "onAnimationStart", "onAnimationEnd", "onAnimationIteration"
+];
+
+function omitProps<T extends object>(props: T, keys: string[]): Partial<T> {
+  const result: Partial<T> = {};
+  Object.keys(props).forEach((key) => {
+    if (!keys.includes(key)) {
+      // @ts-expect-error framer-motion/React prop compatibility
+      result[key] = props[key];
+    }
+  });
+  return result;
+}
+
 export const LiquidGlassInput: React.FC<LiquidGlassInputProps> = ({ className = "", ...props }) => {
   const controls = useAnimation();
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Remove event handlers and animation props that are incompatible with Framer Motion's motion.input
-  const {
-    onDrag,
-    onDragStart,
-    onDragEnd,
-    onDragOver,
-    onDrop,
-    onAnimationStart,
-    onAnimationEnd,
-    onAnimationIteration,
-    ...filteredProps
-  } = props;
 
   const handleFocus = () => {
     controls.start({
@@ -37,15 +41,18 @@ export const LiquidGlassInput: React.FC<LiquidGlassInputProps> = ({ className = 
     });
   };
 
+  // Type assertion to omit incompatible props
+  const safeProps = omitProps(props, OMIT_PROPS) as Omit<React.InputHTMLAttributes<HTMLInputElement>, typeof OMIT_PROPS[number]>;
+
   return (
     <motion.input
       ref={inputRef}
-      className={`glass-bg-silver glass-blur-md glass-shadow glass-radius px-4 py-2 text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none transition-all duration-300 ${className}`}
+      className={`glass-bg-silver glass-blur-md glass-shadow glass-radius px-4 py-2 font-medium text-gray-900 dark:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-glass-teal transition-all duration-300 ${className}`}
       style={{ border: "1.5px solid var(--glass-teal)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}
       animate={controls}
       onFocus={handleFocus}
       onBlur={handleBlur}
-      {...filteredProps}
+      {...safeProps}
     />
   );
 };

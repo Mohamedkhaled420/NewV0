@@ -1,7 +1,7 @@
-import React, { useRef, useState, useMemo } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, PerspectiveCamera, Html } from "@react-three/drei";
-import { Mesh, Color, InstancedMesh, Object3D } from "three";
+import React, { useRef, useMemo } from "react";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { OrbitControls, Html } from "@react-three/drei";
+import { Mesh, Color, Object3D } from "three";
 import * as THREE from "three";
 import { EffectComposer, Bloom, DepthOfField, ChromaticAberration } from '@react-three/postprocessing';
 
@@ -12,7 +12,7 @@ interface Interactive3DModelProps {
 
 // Stylized "D" shape using torus and box primitives, now with compass needle and markers
 const StylizedDCompass: React.FC = React.memo(() => {
-  const group = useRef<any>(null);
+  const group = useRef<THREE.Group>(null);
   // Animate rotation and glow
   useFrame((state) => {
     if (group.current) {
@@ -90,12 +90,12 @@ const StylizedDCompass: React.FC = React.memo(() => {
     </group>
   );
 });
+StylizedDCompass.displayName = "StylizedDCompass";
 
 const Interactive3DModel: React.FC<Interactive3DModelProps> = ({ className = "", style = {} }) => {
-  const [zoom, setZoom] = useState(1.5);
   return (
     <div className={className} style={{ width: "100%", height: 320, ...style }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3.5], fov: 50, zoom }}>
+      <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3.5], fov: 50 }}>
         <color attach="background" args={["#181c2f"]} />
         <ambientLight intensity={0.5} />
         <directionalLight position={[3, 6, 4]} intensity={1.1} castShadow color="#b7bfff" />

@@ -1,6 +1,6 @@
 import React, { useRef, useMemo } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Color } from "three";
+import * as THREE from "three";
 
 // Configurable: number of nodes, connection distance, color palette
 const NODE_COUNT = 32;
@@ -37,7 +37,7 @@ function generateDNodes(count: number): [number, number, number][] {
 const nodes = generateDNodes(NODE_COUNT);
 
 const DynamicBackground: React.FC<{ className?: string; style?: React.CSSProperties }> = ({ className = "", style = {} }) => {
-  const group = useRef<any>(null);
+  const group = useRef<THREE.Group>(null);
   // Animate group rotation for subtle movement
   useFrame((state) => {
     if (group.current) {

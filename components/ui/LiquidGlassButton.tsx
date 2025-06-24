@@ -6,17 +6,34 @@ interface LiquidGlassButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   className?: string;
 }
 
+const OMIT_PROPS = [
+  "onDrag", "onDragStart", "onDragEnd", "onDragOver", "onDrop",
+  "onAnimationStart", "onAnimationEnd", "onAnimationIteration"
+];
+
+function omitProps<T extends object>(props: T, keys: string[]): Partial<T> {
+  const result: Partial<T> = {};
+  Object.keys(props).forEach((key) => {
+    if (!keys.includes(key)) {
+      // @ts-expect-error framer-motion/React prop compatibility
+      result[key] = props[key];
+    }
+  });
+  return result;
+}
+
 export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({ children, className = "", ...props }) => {
   const controls = useAnimation();
   const btnRef = useRef<HTMLButtonElement>(null);
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleMouseEnter = useCallback(() => {
     controls.start({
       boxShadow: "0 0 0 2px var(--glass-teal), 0 8px 32px 0 hsla(240, 40%, 30%, 0.18)",
       background: "var(--glass-teal)",
       transition: { duration: 0.3 },
     });
   }, [controls]);
+
   const handleMouseLeave = useCallback(() => {
     controls.start({
       boxShadow: "var(--glass-shadow)",
@@ -25,13 +42,7 @@ export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({ children, 
     });
   }, [controls]);
 
-  // Remove drag-related and animation-related props to avoid type conflict with framer-motion
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const {
-    onDrag, onDragStart, onDragEnd, onDragOver, onDragEnter, onDragLeave, onDrop,
-    onAnimationStart, onAnimationEnd, onTransitionEnd,
-    ...restProps
-  } = props;
+  const safeProps = omitProps(props, OMIT_PROPS) as Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, typeof OMIT_PROPS[number]>;
 
   return (
     <motion.button
@@ -41,7 +52,7 @@ export const LiquidGlassButton: React.FC<LiquidGlassButtonProps> = ({ children, 
       animate={controls}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      {...restProps}
+      {...safeProps}
     >
       {children}
       {/* Ripple/Glow effect on hover */}

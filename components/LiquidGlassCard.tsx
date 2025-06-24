@@ -1,6 +1,6 @@
 import React, { useRef, ReactElement, useCallback } from "react";
 import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import { Blur } from "react-blur";
+import Blur from "react-blur";
 
 interface LiquidGlassCardProps {
   children: React.ReactNode;

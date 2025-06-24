@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useMemo } from "react";
+import React, { useRef, useMemo, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import { Mesh, Color, Object3D } from "three";
@@ -62,11 +62,25 @@ const StylizedDCompass: React.FC = React.memo(() => {
   const markerMaterialN = useMemo(() => new THREE.MeshStandardMaterial({ color: "#fff", emissive: "#00ffe7", emissiveIntensity: 0.7, transparent: true, opacity: 0.7 }), []);
 
   // Instanced mesh for E, S, W markers
-  const markerPositions: [number, number, number][] = [
+  const markerPositions = useMemo(() => [
     [0.95, 0, 0],
     [0, -0.95, 0],
     [-0.95, 0, 0],
-  ];
+  ] as [number, number, number][], []);
+
+  // Ref for instanced mesh
+  const instancedRef = useRef<THREE.InstancedMesh>(null);
+  React.useEffect(() => {
+    if (instancedRef.current) {
+      markerPositions.forEach((pos, i) => {
+        const obj = new Object3D();
+        obj.position.set(pos[0], pos[1], pos[2]);
+        obj.updateMatrix();
+        instancedRef.current!.setMatrixAt(i, obj.matrix);
+      });
+      instancedRef.current.instanceMatrix.needsUpdate = true;
+    }
+  }, [markerPositions]);
 
   return (
     <group ref={group}>
@@ -81,14 +95,7 @@ const StylizedDCompass: React.FC = React.memo(() => {
       {/* Cardinal direction marker N (bigger) */}
       <mesh position={[0, 0.95, 0]} geometry={sphereGeometryN} material={markerMaterialN} />
       {/* Instanced mesh for E, S, W markers */}
-      <instancedMesh args={[sphereGeometry, markerMaterial, 3]}>
-        {markerPositions.map((pos, i) => {
-          const obj = new Object3D();
-          obj.position.set(...pos);
-          obj.updateMatrix();
-          return <primitive key={i} object={obj} />;
-        })}
-      </instancedMesh>
+      <instancedMesh ref={instancedRef} args={[sphereGeometry, markerMaterial, 3]} />
     </group>
   );
 });
@@ -96,24 +103,26 @@ StylizedDCompass.displayName = "StylizedDCompass";
 
 const Interactive3DModel: React.FC<Interactive3DModelProps> = ({ className = "", style = {} }) => {
   return (
-    <div className={className} style={{ width: "100%", height: 320, ...style }}>
-      <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3.5], fov: 50 }}>
-        <color attach="background" args={["#181c2f"]} />
-        <ambientLight intensity={0.5} />
-        <directionalLight position={[3, 6, 4]} intensity={1.1} castShadow color="#b7bfff" />
-        <pointLight position={[-2, 2, 2]} intensity={0.6} color="#00ffe7" />
-        {/* Slightly move the model back for glass overlay effect */}
-        <group position={[0, 0, -0.18]}>
-          <StylizedDCompass />
-        </group>
-        <EffectComposer>
-          <Bloom luminanceThreshold={0.18} luminanceSmoothing={0.25} intensity={0.7} />
-          <DepthOfField focusDistance={0.015} focalLength={0.25} bokehScale={2.2} height={320} />
-          <ChromaticAberration offset={[0.001, 0.0015]} />
-        </EffectComposer>
-        <OrbitControls enablePan={false} enableZoom={true} minDistance={1.2} maxDistance={3.5} />
-        <Html position={[0, -1.2, 0]} center style={{ color: '#fff', fontWeight: 600, fontSize: 16, textShadow: '0 2px 8px #0008' }}>InnerCompass AI</Html>
-      </Canvas>
+    <div className={className} style={{ width: "100%", height: 320, ...style }} aria-label="InnerCompass AI 3D Logo">
+      <Suspense fallback={<div style={{height:320,display:'flex',alignItems:'center',justifyContent:'center',color:'#7f5af0'}}>Loading 3D...</div>}>
+        <Canvas shadows dpr={[1, 2]} camera={{ position: [2, 2, 3.5], fov: 50 }}>
+          <color attach="background" args={["#181c2f"]} />
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[3, 6, 4]} intensity={1.1} castShadow color="#b7bfff" />
+          <pointLight position={[-2, 2, 2]} intensity={0.6} color="#00ffe7" />
+          {/* Slightly move the model back for glass overlay effect */}
+          <group position={[0, 0, -0.18]}>
+            <StylizedDCompass />
+          </group>
+          <EffectComposer>
+            <Bloom luminanceThreshold={0.18} luminanceSmoothing={0.25} intensity={0.7} />
+            <DepthOfField focusDistance={0.015} focalLength={0.25} bokehScale={2.2} height={320} />
+            <ChromaticAberration offset={[0.001, 0.0015]} />
+          </EffectComposer>
+          <OrbitControls enablePan={false} enableZoom={true} minDistance={1.2} maxDistance={3.5} />
+          <Html position={[0, -1.2, 0]} center style={{ color: '#fff', fontWeight: 600, fontSize: 16, textShadow: '0 2px 8px #0008' }}>InnerCompass AI</Html>
+        </Canvas>
+      </Suspense>
     </div>
   );
 };

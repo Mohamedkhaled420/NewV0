@@ -1,3 +1,6 @@
+// Simple in-memory database simulation
+// In production, you'd use a real database like PostgreSQL, MongoDB, etc.
+
 interface Message {
   id: string
   text: string

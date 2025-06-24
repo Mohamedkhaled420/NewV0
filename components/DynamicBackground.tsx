@@ -1,5 +1,3 @@
-"use client";
-
 import React from "react";
 
 // Pure CSS animated gradient background as a placeholder for debugging R3F issues
